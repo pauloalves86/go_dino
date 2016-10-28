@@ -87,3 +87,8 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+.idea/
+fitness_history.csv
+speciation.csv
+species_fitness.csv
