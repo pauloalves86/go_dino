@@ -1,9 +1,11 @@
-import cv2
+import os
 import time
-from PIL import Image
+from itertools import count
+
+import cv2
 import numpy as np
 import pyautogui
-from itertools import count
+from PIL import Image
 from mss import mss
 
 
@@ -22,7 +24,7 @@ def play_game(get_command_callback) -> int:
             fps_min = 999
             fps_max = 0
             loop_counter = count()
-            gameover_template = cv2.imread('dino_gameover.png', 0)
+            gameover_template = cv2.imread(os.path.join('templates', 'dino_gameover.png'), 0)
             speed = 0
             last_distance = landscape['width']
             ground_height = 12
@@ -91,9 +93,9 @@ def play_game(get_command_callback) -> int:
 
 
 def find_game_position(screenshotter):
-    dino_template = cv2.imread('dino.png', 0)
+    dino_template = cv2.imread(os.path.join('templates', 'dino.png'), 0)
     w, h = dino_template.shape[::-1]
-    landscape_template = cv2.imread('dino_landscape.png', 0)
+    landscape_template = cv2.imread(os.path.join('templates', 'dino_landscape.png'), 0)
     lw, lh = landscape_template.shape[::-1]
     landscape = {}
     for monitor in screenshotter.enum_display_monitors()[1:-1]:
