@@ -1,6 +1,7 @@
 import os
-from functools import partial
 import pickle
+from functools import partial
+from typing import List
 
 from neat import nn, population, statistics
 from neat.config import Config
@@ -8,18 +9,18 @@ from neat.config import Config
 import dino_api
 
 
-def get_command(net, distance, size, speed):
+def get_command(net: nn.FeedForwardNetwork, distance: int, size: int, speed: int) -> str:
     value = net.serial_activate([distance, size, speed])[0]
-    print('activation: {:.4f}'.format(value), end='\r')
+    # print('activation: {:.4f}'.format(value), end='\r')
     if value >= 0.5:
         return 'up'
     return ''
 
 
-def eval_fitness(genomes):
+def eval_fitness(genomes: List):
     for g in genomes:
         net = nn.create_feed_forward_phenotype(g)
-        g.fitness = dino_api.play_game(partial(get_command, net))
+        g.fitness = dino_api.play_game(partial(get_command, net), 1)
 
 
 def main():

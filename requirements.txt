@@ -1,0 +1,6 @@
+pyautogui>=0.9
+mss>=2.0
+neat-python
+numpy
+pillow
+opencv3>=3.1
