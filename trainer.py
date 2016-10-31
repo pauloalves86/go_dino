@@ -27,7 +27,18 @@ def main():
     local_dir = os.path.dirname(__file__)
     config = Config(os.path.join(local_dir, 'train_config.txt'))
     config.save_best = True
-    pop = population.Population(config)
+    config.checkpoint_time_interval = 3
+
+    initial_pop = []
+    # initial_bests = [138, 74, 40, 84, 97, 133, 127, 60, 102, 70, 0, 1, 2]
+    for root, dirs, files in os.walk('best'):
+        for file_name in files:
+            with open(os.path.join('best', file_name), 'rb') as f:
+                initial_pop.append(pickle.load(f))
+    if not initial_pop:
+        initial_pop = None
+
+    pop = population.Population(config, initial_pop)
     pop.run(eval_fitness, 100)
 
     # Log statistics.
@@ -38,6 +49,8 @@ def main():
     print('Number of evaluations: {0}'.format(pop.total_evaluations))
 
     # Show output of the most fit genome against training data.
+    # with open('best/best_genome_70', 'rb') as f:
+    #     winner = pickle.load(f)
     winner = pop.statistics.best_genome()
     with open('winner_genome.pkl', 'wb') as f:
         pickle.dump(winner, f)

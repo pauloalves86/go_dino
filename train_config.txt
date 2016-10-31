@@ -1,5 +1,3 @@
-#--- parameters for the XOR-2 experiment ---#
-
 # The `Types` section specifies which classes should be used for various
 # tasks in the NEAT algorithm.  If you use a non-default class here, you
 # must register it with your Config instance before loading the config file.
@@ -9,31 +7,31 @@ reproduction_type    = DefaultReproduction
 
 [phenotype]
 input_nodes          = 3
-hidden_nodes         = 5
+hidden_nodes         = 9
 output_nodes         = 1
 initial_connection   = fs_neat
-max_weight           = 10
-min_weight           = -10
+max_weight           = 30
+min_weight           = -30
 feedforward          = 0
 activation_functions = sigmoid
-weight_stdev         = 2.0
+weight_stdev         = 3.0
 
 [genetic]
-pop_size                = 20
-max_fitness_threshold   = 1400
-prob_add_conn           = 0.988
-prob_add_node           = 0.085
-prob_delete_conn        = 0.146
-prob_delete_node        = 0.0352
-prob_mutate_bias        = 0.0509
-bias_mutation_power     = 2.093
-prob_mutate_response    = 0.1
-response_mutation_power = 0.1
+pop_size                = 13
+max_fitness_threshold   = 300
+prob_add_conn           = 0.98
+prob_add_node           = 0.01
+prob_delete_conn        = 0.15
+prob_delete_node        = 0.07
+prob_mutate_bias        = 0.05
+bias_mutation_power     = 2.09
+prob_mutate_response    = 0.10
+response_mutation_power = 0.10
 prob_mutate_weight      = 0.46
 prob_replace_weight     = 0.03
-weight_mutation_power   = 0.5
+weight_mutation_power   = 0.50
 prob_mutate_activation  = 0.01
-prob_toggle_link        = 0.0138
+prob_toggle_link        = 0.02
 reset_on_extinction     = 1
 
 [genotype compatibility]
@@ -44,8 +42,8 @@ weight_coefficient      = 0.4
 
 [DefaultStagnation]
 species_fitness_func = mean
-max_stagnation       = 15
+max_stagnation       = 10
 
 [DefaultReproduction]
 elitism              = 2
-survival_threshold   = 0.5
+survival_threshold   = 0.35
