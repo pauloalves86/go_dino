@@ -18,7 +18,7 @@ weight_stdev         = 3.0
 
 [genetic]
 pop_size                = 13
-max_fitness_threshold   = 300
+max_fitness_threshold   = 600
 prob_add_conn           = 0.98
 prob_add_node           = 0.01
 prob_delete_conn        = 0.15
@@ -45,5 +45,5 @@ species_fitness_func = mean
 max_stagnation       = 10
 
 [DefaultReproduction]
-elitism              = 2
+elitism              = 3
 survival_threshold   = 0.35

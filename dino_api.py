@@ -88,23 +88,18 @@ def reject_outliers(values: List[float]) -> np.array:
 
 
 def compute_distance_and_size(roi: np.array, max_distance: int) -> (int, int):
-    misses = 0
     obstacle_found = False
-    size = 0
     distance = max_distance
     roi_mean_color = np.floor(roi.mean())
-    for i, column in enumerate(roi.T):
-        if len(np.where(column < roi_mean_color)[0]) > 0:
-            misses = 0
-            if not obstacle_found:
-                distance = i
+    last_column = distance
+    for column in np.unique(np.where(roi < roi_mean_color)[1]):
+        if not obstacle_found:
+            distance = column
             obstacle_found = True
-            size += 1
-        elif obstacle_found:
-            misses += 1
-            if misses >= 5:
-                break
-    return distance, size
+        elif column > last_column + 4:
+            break
+        last_column = column
+    return distance, last_column - distance
 
 
 def compute_region_of_interest(landscape: Dict) -> (int, int, int, int):
