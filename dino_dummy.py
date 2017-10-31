@@ -1,9 +1,20 @@
+from functools import partial
 import dino_api
+from asciimatics.screen import Screen
 
 
-def main():
-    dino_api.play_game(lambda distance, size, speed: 'up' if distance - speed < 95 else '', verbose=1)
+def main(screen):
+    dino_api.play_game(partial(dummy_play, screen))
+
+
+def dummy_play(screen, distance: int, size: int, speed: int) -> str:
+    action = 'up' if distance - speed < 102 else ''
+    screen.print_at('Distance: {:3d}'.format(distance), 0, 0, bg=1 if action else 0)
+    screen.print_at('Size:     {:3d}'.format(size), 0, 1)
+    screen.print_at('Speed:    {:3d}'.format(speed), 0, 2)
+    screen.refresh()
+    return action
 
 
 if __name__ == '__main__':
-    main()
+    Screen.wrapper(main)

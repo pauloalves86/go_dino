@@ -9,7 +9,7 @@ from PIL import Image
 from mss import mss
 
 
-def play_game(get_command_callback: Callable[[int, int, int], str], verbose=0) -> int:
+def play_game(get_command_callback: Callable[[int, int, int], str]) -> int:
     with mss() as screenshotter:
         get_game_landscape_and_set_focus_or_die(screenshotter)
         reset_game()
@@ -26,8 +26,8 @@ def play_game(get_command_callback: Callable[[int, int, int], str], verbose=0) -
         last_command_time = time.time()
 
         while True:
-            buffer = screenshotter.get_pixels(landscape)
-            image = Image.frombytes('RGB', (landscape['width'], landscape['height']), buffer).convert('L')
+            buffer = screenshotter.grab(landscape)
+            image = Image.frombytes('RGB', buffer.size, buffer.rgb).convert('L')
             image = np.array(image)
             image += np.abs(247 - image[0, x2])
             roi = image[y1:y2, x1:x2]
@@ -42,10 +42,6 @@ def play_game(get_command_callback: Callable[[int, int, int], str], verbose=0) -
                     reset_game()
                     return score
             last_distance = distance
-
-            if verbose > 0:
-                print('Distance: {:3d} Size {:2d} Speed: {:3d} Score: {:4.0f}'.format(distance, size, speed,
-                                                                                      score) + ' ' * 10, end='\r')
             if time.time() - last_command_time < 0.6:
                 continue
             command = get_command_callback(distance, size, speed)
@@ -60,9 +56,9 @@ def find_game_position(screenshotter, threshold) -> Dict:
     landscape_template = cv2.imread(os.path.join('templates', 'dino_landscape.png'), 0)
     lw, lh = landscape_template.shape[::-1]
     landscape = {}
-    for monitor in screenshotter.enum_display_monitors()[1:-1]:
-        buffer = screenshotter.get_pixels(monitor)
-        image = Image.frombytes('RGB', (monitor['width'], monitor['height']), buffer).convert('L')
+    for monitor in screenshotter.monitors[1:-1]:
+        buffer = screenshotter.grab(monitor)
+        image = Image.frombytes('RGB', buffer.size, buffer.rgb).convert('L')
         image = np.array(image)
         res = cv2.matchTemplate(image, dino_template, cv2.TM_CCOEFF_NORMED)
         loc = np.where(res >= threshold)
@@ -118,13 +114,7 @@ def compute_speed(distance: int, last_distance: int,
         last_speeds.append((last_distance - distance) / dt)
         if len(last_speeds) > 30:
             last_speeds.pop(0)
-        try:
-            speed = int(np.max([np.mean(reject_outliers(last_speeds)), speed]))
-        except ValueError:
-            print(last_speeds)
-            print(reject_outliers(last_speeds))
-            print(np.mean(reject_outliers(last_speeds)))
-            exit(1)
+        speed = int(np.max([np.mean(reject_outliers(last_speeds)), speed]))
     return speed
 
 
@@ -135,7 +125,7 @@ def start_game():
 
 def reset_game():
     pyautogui.hotkey('ctrl', 'r')
-    time.sleep(1)
+    time.sleep(2.5)
 
 
 def get_game_landscape_and_set_focus_or_die(screenshotter, threshold=0.7) -> Dict:

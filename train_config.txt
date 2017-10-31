@@ -1,49 +1,64 @@
-# The `Types` section specifies which classes should be used for various
-# tasks in the NEAT algorithm.  If you use a non-default class here, you
-# must register it with your Config instance before loading the config file.
-[Types]
-stagnation_type      = DefaultStagnation
-reproduction_type    = DefaultReproduction
+# neat-python configuration for the LunarLander-v2 environment on OpenAI Gym
 
-[phenotype]
-input_nodes          = 3
-hidden_nodes         = 9
-output_nodes         = 1
-initial_connection   = fs_neat
-max_weight           = 30
-min_weight           = -30
-feedforward          = 0
-activation_functions = sigmoid
-weight_stdev         = 3.0
+[NEAT]
+pop_size              = 13
+# Note: the fitness threshold will never be reached because
+# we are controlling the termination ourselves based on simulation performance.
+fitness_criterion     = max
+fitness_threshold     = 600.0
+reset_on_extinction   = 0
 
-[genetic]
-pop_size                = 13
-max_fitness_threshold   = 600
-prob_add_conn           = 0.98
-prob_add_node           = 0.01
-prob_delete_conn        = 0.15
-prob_delete_node        = 0.07
-prob_mutate_bias        = 0.05
-bias_mutation_power     = 2.09
-prob_mutate_response    = 0.10
-response_mutation_power = 0.10
-prob_mutate_weight      = 0.46
-prob_replace_weight     = 0.03
-weight_mutation_power   = 0.50
-prob_mutate_activation  = 0.01
-prob_toggle_link        = 0.02
-reset_on_extinction     = 1
+[DefaultGenome]
+num_inputs              = 3
+num_hidden              = 9
+num_outputs             = 1
+initial_connection      = fs_neat_hidden
+feed_forward            = True
+compatibility_disjoint_coefficient = 1.0
+compatibility_weight_coefficient   = 1.0
+conn_add_prob           = 0.98
+conn_delete_prob        = 0.15
+node_add_prob           = 0.01
+node_delete_prob        = 0.07
+activation_default      = sigmoid
+activation_options      = sigmoid
+activation_mutate_rate  = 0.0
+aggregation_default     = sum
+aggregation_options     = sum
+aggregation_mutate_rate = 0.0
+bias_init_mean          = 0.0
+bias_init_stdev         = 1.0
+bias_replace_rate       = 0.02
+bias_mutate_rate        = 0.8
+bias_mutate_power       = 2.09
+bias_max_value          = 30.0
+bias_min_value          = -30.0
+response_init_mean      = 1.0
+response_init_stdev     = 0.0
+response_replace_rate   = 0.0
+response_mutate_rate    = 0.1
+response_mutate_power   = 0.1
+response_max_value      = 30.0
+response_min_value      = -30.0
 
-[genotype compatibility]
+weight_max_value        = 30
+weight_min_value        = -30
+weight_init_mean        = 0.0
+weight_init_stdev       = 10.0
+weight_mutate_rate      = 0.8
+weight_replace_rate     = 0.02
+weight_mutate_power     = 0.5
+enabled_default         = True
+enabled_mutate_rate     = 0.01
+
+[DefaultSpeciesSet]
 compatibility_threshold = 3.0
-excess_coefficient      = 1.0
-disjoint_coefficient    = 1.0
-weight_coefficient      = 0.4
 
 [DefaultStagnation]
 species_fitness_func = mean
 max_stagnation       = 10
+species_elitism      = 4
 
 [DefaultReproduction]
-elitism              = 3
-survival_threshold   = 0.35
+elitism            = 3
+survival_threshold = 0.35

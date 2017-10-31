@@ -4,3 +4,4 @@ neat-python
 numpy
 pillow
 opencv3>=3.1
+asciimatics
