@@ -55,18 +55,16 @@ def find_game_position(screenshotter, threshold) -> Dict:
     w, h = dino_template.shape[::-1]
     landscape_template = cv2.imread(os.path.join('templates', 'dino_landscape.png'), 0)
     lw, lh = landscape_template.shape[::-1]
-    landscape = {}
-    for monitor in screenshotter.monitors[1:-1]:
-        buffer = screenshotter.grab(monitor)
-        image = Image.frombytes('RGB', buffer.size, buffer.rgb).convert('L')
-        image = np.array(image)
-        res = cv2.matchTemplate(image, dino_template, cv2.TM_CCOEFF_NORMED)
-        loc = np.where(res >= threshold)
-        if len(loc[0]):
-            pt = next(zip(*loc[::-1]))
-            landscape = dict(monitor, height=lh, left=pt[0], top=pt[1] - lh + h, width=lw)
-            break
-    return landscape
+    monitor = screenshotter.monitors[0]
+    buffer = screenshotter.grab(monitor)
+    image = Image.frombytes('RGB', buffer.size, buffer.rgb).convert('L')
+    image = np.array(image)
+    res = cv2.matchTemplate(image, dino_template, cv2.TM_CCOEFF_NORMED)
+    loc = np.where(res >= threshold)
+    if len(loc[0]):
+        pt = next(zip(*loc[::-1]))
+        return dict(monitor, height=lh, left=pt[0], top=pt[1] - lh + h, width=lw)
+    return {}
 
 
 def reject_outliers(values: List[float]) -> np.array:
