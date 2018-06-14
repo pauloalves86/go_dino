@@ -127,7 +127,15 @@ def reset_game():
 
 
 def get_game_landscape_and_set_focus_or_die(screenshotter, threshold=0.7) -> Dict:
-    landscape = find_game_position(screenshotter, threshold)
+    tries = 0
+    landscape = None
+    while not landscape:
+        landscape = find_game_position(screenshotter, threshold)
+        if landscape or tries == 10:
+            break
+        else:
+            tries += 1
+        time.sleep(1)
     if not landscape:
         print("Can't find the game!")
         exit(1)
