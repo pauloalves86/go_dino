@@ -51,18 +51,22 @@ def play_game(get_command_callback: Callable[[int, int, int], str]) -> int:
 
 
 def find_game_position(screenshotter, threshold) -> Dict:
-    dino_template = cv2.imread(os.path.join('templates', 'dino.png'), 0)
-    w, h = dino_template.shape[::-1]
-    landscape_template = cv2.imread(os.path.join('templates', 'dino_landscape.png'), 0)
-    lw, lh = landscape_template.shape[::-1]
     monitor = screenshotter.monitors[0]
     buffer = screenshotter.grab(monitor)
     image = Image.frombytes('RGB', buffer.size, buffer.rgb).convert('L')
     image = np.array(image)
+    dino_template = cv2.imread(os.path.join('templates', 'dino.png'), 0)
     res = cv2.matchTemplate(image, dino_template, cv2.TM_CCOEFF_NORMED)
     loc = np.where(res >= threshold)
+    if len(loc[0]) == 0:
+        dino_template = cv2.imread(os.path.join('templates', 'dino2.png'), 0)
+        res = cv2.matchTemplate(image, dino_template, cv2.TM_CCOEFF_NORMED)
+        loc = np.where(res >= threshold)
     if len(loc[0]):
         pt = next(zip(*loc[::-1]))
+        w, h = dino_template.shape[::-1]
+        landscape_template = cv2.imread(os.path.join('templates', 'dino_landscape.png'), 0)
+        lw, lh = landscape_template.shape[::-1]
         return dict(monitor, height=lh, left=pt[0], top=pt[1] - lh + h, width=lw)
     return {}
 
