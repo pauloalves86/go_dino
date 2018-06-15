@@ -1,10 +1,13 @@
 from functools import partial
-import dino_api
+
 from asciimatics.screen import Screen
+
+from dino_api import Board
 
 
 def main(screen):
-    dino_api.play_game(partial(dummy_play, screen))
+    board = Board()
+    board.play_game(partial(dummy_play, screen))
 
 
 def dummy_play(screen, distance: int, size: int, speed: int) -> str:
