@@ -17,6 +17,7 @@ def play_game(get_command_callback: Callable[[int, int, int], str]) -> int:
 
         start_game()
         gameover_template = cv2.imread(os.path.join('templates', 'dino_gameover.png'), 0)
+        gameover_template2 = cv2.imread(os.path.join('templates', 'dino_gameover2.png'), 0)
         start = time.time()
         last_distance = landscape['width']
         x1, x2, y1, y2 = compute_region_of_interest(landscape)
@@ -38,7 +39,9 @@ def play_game(get_command_callback: Callable[[int, int, int], str]) -> int:
             # Check GAME OVER
             if distance == last_distance or distance == 0:
                 res = cv2.matchTemplate(image, gameover_template, cv2.TM_CCOEFF_NORMED)
-                if np.where(res >= 0.7)[0]:
+                if np.max(res) < 0.7:
+                    res = cv2.matchTemplate(image, gameover_template2, cv2.TM_CCOEFF_NORMED)
+                if np.max(res) >= 0.7:
                     reset_game()
                     return score
             last_distance = distance
