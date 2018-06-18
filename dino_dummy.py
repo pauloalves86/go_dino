@@ -1,3 +1,4 @@
+import time
 from functools import partial
 
 from asciimatics.screen import Screen
@@ -8,6 +9,8 @@ from dino_api import Board
 def main(screen):
     board = Board()
     board.play_game(partial(dummy_play, screen))
+    screen.print_at('GAME OVER', 0, 3)
+    time.sleep(10)
 
 
 def dummy_play(screen, distance: int, size: int, speed: int) -> str:
