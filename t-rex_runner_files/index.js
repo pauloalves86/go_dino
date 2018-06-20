@@ -2764,3 +2764,30 @@ function simulateKey(action, keycode) {
 function getScore() {
     return Runner.instance_.distanceMeter.getActualDistance(Runner.instance_.distanceRan);
 }
+
+function getNextObstacle() {
+    if (Runner.instance_.horizon.obstacles.length === 0) {
+        return [0, 0, 0];
+    }
+    return [Runner.instance_.horizon.obstacles[0].xPos,
+            Runner.instance_.horizon.obstacles[0].width,
+            Runner.instance_.horizon.obstacles[0].yPos];
+}
+
+function getCurrentSpeed() {
+    return Runner.instance_.currentSpeed;
+}
+
+/**
+ * @return {boolean}
+ */
+function Crashed() {
+    return Runner.instance_.crashed;
+}
+
+/**
+ * @return {boolean}
+ */
+function Playing() {
+    return Runner.instance_.playing;
+}
