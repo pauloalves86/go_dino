@@ -1,14 +1,23 @@
-import os
-import sys
 import math
+import os
+import pickle
+import sys
+from typing import List
 
+import neat
 from PyQt5.QtCore import *
+from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtWebEngineWidgets import *
 from PyQt5.QtWidgets import *
+from neat import nn, population
+from neat.config import Config
+
+
+app = QApplication(sys.argv)
 
 
 class MainWindow(QWidget):
-    LOOP_TIMEOUT_MS = 16
+    LOOP_TIMEOUT_MS = 8
     JUMP = 38
     DUCK = 40
     RESTART = 13
@@ -20,7 +29,7 @@ class MainWindow(QWidget):
         self.setWindowTitle('T-Rex Runner AI')
         self.setMinimumSize(500, 400)
 
-        players = ['Dummy', 'Winner', 'Trainer']
+        players = ['Trainer', 'Dummy', 'Winner']
         self.combo_box_player = QComboBox(self)
         self.combo_box_player.addItems(players)
 
@@ -29,7 +38,7 @@ class MainWindow(QWidget):
         self.label_height = QLabel('', self)
         self.label_speed = QLabel('', self)
 
-        html_path = os.path.join(os.path.dirname(__file__), 't-rex_runner.html')
+        html_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 't-rex_runner.html'))
         html_url = QUrl('file://' + html_path)
         self.web_view = QWebEngineView()
         self.web_view.setUrl(html_url)
@@ -37,13 +46,15 @@ class MainWindow(QWidget):
         self.web_view.setMaximumSize(500, 160)
 
         self.label_move_hist = QLabel('', self)
+        self.label_move_hist.setTextInteractionFlags(Qt.TextSelectableByKeyboard)
+
         self.scroll_area = QScrollArea(self)
         self.scroll_area.setMinimumSize(500, 160)
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setWidget(self.label_move_hist)
 
-        self.build_button = QPushButton('&Start Dummy', self)
-        self.build_button.clicked.connect(self.play)
+        self.build_button = QPushButton('&Start', self)
+        self.build_button.clicked.connect(self.create_player)
 
         self.form_layout = QFormLayout()
         self.form_layout.addRow('Player:', self.combo_box_player)
@@ -73,10 +84,21 @@ class MainWindow(QWidget):
         self.width = 0
         self.height = 0
         self.last_key = None
+        self.score = 0
+        self.player_name = None
+
+    def create_player(self):
+        player_name = self.combo_box_player.currentText()
+        if player_name == self.player_name:
+            return
+        if player_name == 'Dummy':
+            self.player = DummyPlayer(self)
+        elif player_name == 'Trainer':
+            self.player = Trainer(self)
+            self.player.start()
+        self.player_name = player_name
 
     def play(self):
-        if self.combo_box_player.currentText() == 'Dummy':
-            self.player = DummyPlayer(self)
         if self.player:
             self.jump()
             self.timer_game_loop.start(self.LOOP_TIMEOUT_MS)
@@ -89,8 +111,8 @@ class MainWindow(QWidget):
 
     def crashed(self, state):
         if state and self.timer_game_loop.isActive():
+            self.web_view.page().runJavaScript('getScore();', self.player.game_over)
             self.web_view.page().runJavaScript('Playing();', self.playing)
-            self.player.game_over()
 
     def playing(self, state):
         if state is False and self.timer_game_loop.isActive():
@@ -110,25 +132,25 @@ class MainWindow(QWidget):
         self.speed = speed
         self.label_speed.setText('{:.2f}'.format(speed))
 
-    def simulate_key(self, state, key_code):
-        source = 'simulateKey("{}", {});'
-        self.web_view.page().runJavaScript(source.format(state, key_code))
-
     def jump(self):
-        self.simulate_key('keydown', self.JUMP)
-        self.last_key = self.JUMP
+        self.last_key = Qt.Key_Up
+        event = QKeyEvent(QEvent.KeyPress, Qt.Key_Up, Qt.NoModifier, '', False)
+        app.notify(self.web_view.focusProxy(), event)
 
     def duck(self):
-        self.simulate_key('keydown', self.DUCK)
-        self.last_key = self.DUCK
+        self.last_key = Qt.Key_Down
+        event = QKeyEvent(QEvent.KeyPress, Qt.Key_Up, Qt.NoModifier, '', False)
+        app.notify(self.web_view.focusProxy(), event)
 
     def restart(self):
-        self.simulate_key('keydown', self.RESTART)
-        self.last_key = self.RESTART
+        self.last_key = Qt.Key_Return
+        event = QKeyEvent(QEvent.KeyPress, Qt.Key_Up, Qt.NoModifier, '', False)
+        app.notify(self.web_view.focusProxy(), event)
 
     def release(self):
         if self.last_key:
-            self.simulate_key('keyup', self.last_key)
+            event = QKeyEvent(QEvent.KeyRelease, self.last_key, Qt.NoModifier, '', False)
+            app.notify(self.web_view.focusProxy(), event)
             self.last_key = None
 
     def run(self):
@@ -142,22 +164,80 @@ class DummyPlayer(object):
 
     def update(self):
         decision = (self.window.distance + (self.window.width / 2)) / math.log(max(self.window.speed, 6))
-        if 0 < decision < 85:
+        if 0 < decision < 90:
             if self.window.last_key is None:
-                last_move = '({:03d} + ({} / 2)) / ln({:.2f}) = {:.2f}\n'.format(self.window.distance, self.window.width,
-                                                                               self.window.speed, decision)
+                last_move = '({:03d} + ({} / 2)) / ln({:.2f}) = {:.2f}\n'.format(self.window.distance,
+                                                                                 self.window.width,
+                                                                                 self.window.speed, decision)
                 self.window.label_move_hist.setText(last_move + self.window.label_move_hist.text())
                 self.window.jump()
         else:
             self.window.release()
 
-    def game_over(self):
+    def game_over(self, score):
         pass
 
 
+class Trainer(QThread):
+    def __init__(self, window: MainWindow):
+        super().__init__()
+        self.net = None
+        self.window = window
+        self.stop = False
+        self.score = 0
+        local_dir = os.path.dirname(__file__)
+        config = Config(neat.DefaultGenome, neat.DefaultReproduction,
+                        neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                        os.path.join(local_dir, 'train_config.txt'))
+        config.save_best = True
+        config.checkpoint_time_interval = 3
+
+        self.pop = population.Population(config)
+        self.pop.add_reporter(neat.Checkpointer(1))
+
+    def run(self):
+        winner = self.pop.run(self.eval_fitness, 100)
+        with open('winner.pkl', 'wb') as f:
+            pickle.dump(winner, f)
+
+    def play(self):
+        print('play')
+        self.stop = False
+        self.window.restart()
+        self.window.release()
+        if not self.window.timer_game_loop.isActive():
+            self.window.timer_game_loop.start(self.window.LOOP_TIMEOUT_MS)
+
+    def game_over(self, score):
+        print('game over')
+        self.score = score
+        self.stop = True
+        print(score, self.stop)
+
+    def update(self):
+        if not self.net:
+            return
+        value = self.net.activate([self.window.distance, self.window.width, self.window.speed])[0]
+        self.window.label_move_hist.setText('{:.2f}'.format(value))
+        if value >= 0.5:
+            self.window.jump()
+        else:
+            self.window.release()
+
+    def eval_fitness(self, genomes: List, config):
+        for i, g in genomes:
+            self.net = nn.FeedForwardNetwork.create(g, config)
+            self.play()
+            while not self.stop:
+                # g.fitness = self.start()
+                self.msleep(200)
+            print('fitness')
+            g.fitness = self.score
+
+
 def main():
-    app = MainWindow(QApplication(sys.argv))
-    app.run()
+    window = MainWindow(app)
+    window.run()
 
 
 if __name__ == '__main__':
